@@ -1,1 +1,2 @@
-fpdf
+fpdf==1.7.2
+Pillow==10.0.0

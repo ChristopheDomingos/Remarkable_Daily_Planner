@@ -1,10 +1,16 @@
 from fpdf import FPDF
 from planner.templates import create_daily_page, create_weekly_overview, create_monthly_title
+from planner.styles import MARGIN_LEFT, MARGIN_TOP, MARGIN_RIGHT
 
 def main():
     # Initialize the PDF object
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
+
+    # Set margins
+    pdf.set_left_margin(MARGIN_LEFT)
+    pdf.set_top_margin(MARGIN_TOP)
+    pdf.set_right_margin(MARGIN_RIGHT)
 
     # Example: Generate a daily page
     create_daily_page(pdf, "2025-01-05")
