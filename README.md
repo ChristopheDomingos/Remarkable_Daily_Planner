@@ -1,31 +1,22 @@
-Documentation for the project
-
-# reMarkable Daily Planner Generator
+# Remarkable Daily Planner
 
 ## Overview
-This project generates a daily planner PDF for the year 2025, tailored for the reMarkable tablet. Each page includes structured sections for tasks, notes, and more.
+This project generates a professional-grade PDF planner tailored for use on the Remarkable tablet. It includes:
+- Daily pages for every day of the year.
+- Weekly overview pages for setting weekly goals and tracking habits.
+- Monthly title pages for key highlights and goals.
 
 ## Features
-- One page per day of 2025.
-- Weekly overviews and monthly title pages.
-- Designed for reMarkable's screen resolution.
-
-## Setup
-
-1. **Clone the repository**:
-   ```bash
-   git clone <repo_url>
-   cd remarkable_daily_planner
-
-   # Remarkable Daily Planner
-
-## Overview
-This project generates professional-grade PDF planners for daily, weekly, and monthly schedules.
-
-## Features
-- **Daily Planner**: Tracks priorities, tasks, and reflections.
-- **Weekly Overview**: Highlights weekly goals, task trackers, and habits.
-- **Monthly Pages**: Includes a title page with space for achievements and challenges.
+- **Daily Pages**:
+  - Header with the month, date (`DD/MM/YYYY`), and day of the week.
+  - Writable task list with `-` markers for ease of use on the Remarkable.
+  - Dedicated notes section for freeform writing.
+- **Weekly Overview**:
+  - Weekly goals section.
+  - Habit tracker for daily habits.
+- **Monthly Title Pages**:
+  - Month name prominently displayed.
+  - Space for monthly goals or key highlights.
 
 ## Installation
 1. Clone the repository:

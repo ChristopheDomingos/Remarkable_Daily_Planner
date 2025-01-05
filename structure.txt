@@ -1,0 +1,16 @@
+.
+├── main.py                     # Main script to run the planner
+├── planner/
+│   ├── __init__.py             # Makes the folder a package
+│   ├── templates.py            # PDF template functions
+│   ├── assets/                 # Assets folder for logos, icons, etc.
+│       ├── logo.png
+│       ├── backgrounds/
+│           ├── monthly_bg.jpg
+│           ├── weekly_bg.jpg
+│   └── styles.py               # Styling constants for fonts, colors, etc.
+├── tests/                      # Tests for template functions
+├── output/                     # Folder for generated PDFs
+├── requirements.txt            # Python dependencies
+├── README.md                   # Documentation
+└── structure.txt               # Project structure overview
