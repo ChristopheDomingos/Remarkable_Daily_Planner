@@ -9,8 +9,8 @@ This project generates a professional-grade PDF planner tailored for use on the 
 ## Features
 - **Daily Pages**:
   - Header with the month, date (`DD/MM/YYYY`), and day of the week.
-  - Writable task list with `-` markers for ease of use on the Remarkable.
-  - Dedicated notes section for freeform writing.
+  - Writable task list with `-` markers and aligned horizontal lines for guided handwriting.
+  - Notes section with faint dotted lines for structured writing.
 - **Weekly Overview**:
   - Weekly goals section.
   - Habit tracker for daily habits.
