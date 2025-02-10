@@ -1,14 +1,8 @@
-# Fonts
-FONT_TITLE = ('Arial', 'B', 16)
-FONT_SUBTITLE = ('Arial', 'B', 14)
-FONT_BODY = ('Arial', '', 12)
+# For simplicity, we hard-code defaults here.
+from typing import Tuple
 
-# Colors (if needed for future updates)
-COLOR_PRIMARY = (0, 0, 128)  # Navy Blue
-COLOR_ACCENT = (255, 165, 0)  # Orange
-COLOR_TEXT = (0, 0, 0)  # Black
-
-# Margins
-MARGIN_LEFT = 10
-MARGIN_TOP = 15
-MARGIN_RIGHT = 10
+FONT_TITLE: Tuple[str, str, int] = ("Arial", "B", 16)
+FONT_BODY: Tuple[str, str, int] = ("Arial", "", 12)
+MARGIN_LEFT: int = 10
+MARGIN_TOP: int = 15
+MARGIN_RIGHT: int = 10

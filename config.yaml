@@ -1,0 +1,6 @@
+margins:
+  left: 10
+  top: 15
+  right: 10
+font_title: "Arial,B,16"
+font_body: "Arial,,12"
