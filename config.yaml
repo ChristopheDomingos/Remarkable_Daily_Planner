@@ -4,6 +4,6 @@ margins:
   right: 10
 font_title: "Arial,B,16"
 font_body: "Arial,,12"
-# For Examen page font customization
-font_examen_step_title: "Arial,B,12"
-font_examen_prompt: "Arial,I,10"
+# For Examen page font customization, you can add (defaults will be used if missing):
+# font_examen_step_title: "Arial,B,12"
+# font_examen_prompt: "Arial,I,10"

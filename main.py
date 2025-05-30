@@ -14,38 +14,39 @@ from planner.templates import (
 
 from planner.styles import MARGIN_LEFT, MARGIN_TOP, MARGIN_RIGHT
 
-def generate_planner(start_date_obj: date, end_date_obj: date, output_directory: str = "generated_planners"):
+def generate_planner_for_format(start_date_obj: date, end_date_obj: date, page_format: str, base_output_directory: str):
     current_date = start_date_obj
     active_pdf = None
     current_pdf_month = -1
     current_pdf_year = -1
 
-    if not os.path.exists(output_directory):
+    # Create year-specific and format-specific output directory
+    year_dir = os.path.join(base_output_directory, str(start_date_obj.year))
+    format_specific_dir = os.path.join(year_dir, page_format)
+
+    if not os.path.exists(format_specific_dir):
         try:
-            os.makedirs(output_directory)
-            print(f"Created output directory: {os.path.abspath(output_directory)}")
+            os.makedirs(format_specific_dir)
+            print(f"Created output directory: {os.path.abspath(format_specific_dir)}")
         except OSError as e:
-            print(f"Error creating output directory {output_directory}: {e}")
+            print(f"Error creating output directory {format_specific_dir}: {e}")
             return 
 
-    print(f"PDFs will be saved in: {os.path.abspath(output_directory)}")
+    print(f"PDFs for {page_format} will be saved in: {os.path.abspath(format_specific_dir)}")
 
     while current_date <= end_date_obj:
         if current_date.month != current_pdf_month or current_date.year != current_pdf_year:
             if active_pdf is not None:
                 try:
                     month_name_to_save = calendar.month_name[current_pdf_month]
-                    # MODIFIED: Add month number to filename
-                    output_filename = f"{current_pdf_month} - {month_name_to_save}_{current_pdf_year}.pdf"
+                    output_filename = f"{current_pdf_month:02d} - {month_name_to_save}_{current_pdf_year}_{page_format}.pdf"
                 except IndexError: 
-                    # Fallback if current_pdf_month is somehow invalid (e.g. 0 or >12)
-                    # Though this should not happen with correct logic.
-                    output_filename = f"Month_{current_pdf_month}_{current_pdf_year}.pdf" 
+                    output_filename = f"Month_{current_pdf_month}_{current_pdf_year}_{page_format}.pdf"
                 
-                output_filepath = os.path.join(output_directory, output_filename)
+                output_filepath = os.path.join(format_specific_dir, output_filename)
                 try:
                     active_pdf.output(output_filepath, "F")
-                    print(f"PDF for {month_name_to_save} {current_pdf_year} generated as {output_filepath}")
+                    print(f"PDF for {month_name_to_save} {current_pdf_year} ({page_format}) generated as {output_filepath}")
                 except Exception as e:
                     print(f"Error saving PDF {output_filepath}: {e}")
 
@@ -53,7 +54,7 @@ def generate_planner(start_date_obj: date, end_date_obj: date, output_directory:
             current_pdf_year = current_date.year
             month_name_full = current_date.strftime("%B") 
 
-            active_pdf = FPDF()
+            active_pdf = FPDF(orientation='P', unit='mm', format=page_format) # Set page format
             active_pdf.set_auto_page_break(auto=True, margin=15) 
             active_pdf.set_left_margin(MARGIN_LEFT)
             active_pdf.set_top_margin(MARGIN_TOP)
@@ -75,23 +76,31 @@ def generate_planner(start_date_obj: date, end_date_obj: date, output_directory:
     if active_pdf is not None:
         try:
             month_name_to_save = calendar.month_name[current_pdf_month]
-            # MODIFIED: Add month number to filename for the last PDF
-            output_filename = f"{current_pdf_month} - {month_name_to_save}_{current_pdf_year}.pdf"
+            output_filename = f"{current_pdf_month:02d} - {month_name_to_save}_{current_pdf_year}_{page_format}.pdf"
         except IndexError:
-            output_filename = f"Month_{current_pdf_month}_{current_pdf_year}.pdf"
+            output_filename = f"Month_{current_pdf_month}_{current_pdf_year}_{page_format}.pdf"
 
-        output_filepath = os.path.join(output_directory, output_filename)
+        output_filepath = os.path.join(format_specific_dir, output_filename)
         try:
             active_pdf.output(output_filepath, "F")
-            print(f"PDF for {month_name_to_save} {current_pdf_year} generated as {output_filepath}")
+            print(f"PDF for {month_name_to_save} {current_pdf_year} ({page_format}) generated as {output_filepath}")
         except Exception as e:
             print(f"Error saving PDF {output_filepath}: {e}")
 
 if __name__ == "__main__":
     print("Starting PDF planner generation...")
     
-    planner_start_date = date(2025, 1, 1)
-    planner_end_date = date(2025, 12, 31) 
+    years_to_generate = [2025, 2026]
+    formats_to_generate = ['A4', 'A5'] # A5 is good for Remarkable
+    base_output_dir = "generated_planners"
 
-    generate_planner(planner_start_date, planner_end_date, output_directory="generated_planners")
-    print("PDF planner generation finished.")
+    for year in years_to_generate:
+        print(f"\n--- Generating Planner for {year} ---")
+        for fmt in formats_to_generate:
+            print(f"\n-- Generating {fmt} format --")
+            start_date = date(year, 1, 1)
+            end_date = date(year, 12, 31)
+            generate_planner_for_format(start_date, end_date, fmt, base_output_dir)
+        print(f"--- Finished generating for {year} ---")
+    
+    print("\nPDF planner generation for all requested years and formats finished.")

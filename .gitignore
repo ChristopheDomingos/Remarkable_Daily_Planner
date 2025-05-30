@@ -1,1 +1,8 @@
-Git ignore file
+# Ignore generated PDF planner directories
+generated_planners/
+generated_examen_planners/
+
+# You might also want to ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
