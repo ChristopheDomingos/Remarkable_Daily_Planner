@@ -6,3 +6,9 @@ generated_examen_planners/
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+.DS_Store
+
+# IDE-specific
+.idea/
+.vscode/

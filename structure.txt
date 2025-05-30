@@ -1,8 +1,30 @@
-planner_project/
-├── config.yaml
-├── main.py
-└── planner/
-    ├── __init__.py
-    ├── config.py
-    ├── styles.py
-    └── templates.py
+Remarkable_Daily_Planner/
+├── config.yaml                     # Main configuration for styles (fonts, margins)
+├── main.py                         # Main script to generate full daily planners
+├── main_generate_examen_sampler.py # Script to generate Examen-focused planners
+├── my_quotes.csv                   # CSV file for custom daily quotes
+├── README.md                       # Project information and usage guide
+├── requirements.txt                # Python package dependencies
+├── structure.txt                   # This file: overview of the project directory structure
+├── LICENSE                         # Project license (MIT License)
+│
+├── planner/                        # Core planner generation package
+│   ├── __init__.py                 # Makes 'planner' a Python package
+│   ├── config.py                   # Loads configuration from config.yaml
+│   ├── styles.py                   # Defines styles (fonts, margins) from config
+│   ├── templates.py                # Functions to create PDF page layouts
+│   └── utils.py                    # Utility functions (e.g., quote loader)
+│
+├── generated_planners/             # Default output directory for full planners
+│                                   # (Recommend adding to .gitignore)
+└── generated_examen_planners/      # Default output directory for Examen planners
+                                    # (Recommend adding to .gitignore)
+
+Notes on .gitignore:
+It's good practice to add the following to a .gitignore file in your project root:
+venv/
+__pycache__/
+*.pyc
+generated_planners/
+generated_examen_planners/
+*.pdf # If you test locally and don't want to commit test PDFs in the root
