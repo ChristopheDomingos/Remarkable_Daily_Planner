@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # Remarkable Daily Planner
-# Version 2.2
+# Version 2.3
 #
 # Created by: Christophe Domingos
-# Date: May 30, 2025
+# Date: June 3, 2025 # Updated
 #
 # Description: Handles loading of planner configuration from a YAML file.
 

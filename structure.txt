@@ -11,6 +11,7 @@ Remarkable_Daily_Planner/
 ├── planner/                        # Core planner generation package
 │   ├── __init__.py                 # Makes 'planner' a Python package
 │   ├── config.py                   # Loads configuration from config.yaml
+│   ├── data.py                     # Stores birthday, anniversary, and special date data (NEW)
 │   ├── styles.py                   # Defines styles (fonts, margins) from config
 │   ├── templates.py                # Functions to create PDF page layouts
 │   └── utils.py                    # Utility functions (e.g., quote loader)
