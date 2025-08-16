@@ -1,126 +1,204 @@
 # -*- coding: utf-8 -*-
-# Remarkable Daily Planner
-# Version 2.3
-#
-# Created by: Christophe Domingos
-# Date: June 3, 2025 # Updated
+"""
+Remarkable Daily Planner
+Single-source version is optional; keeping inline for compatibility.
+"""
 
+from __future__ import annotations
+
+import argparse
 import calendar as py_calendar
-from datetime import date, timedelta
-from fpdf import FPDF
+import logging
 import os
+from datetime import date, timedelta
+from typing import Dict
 
+import yaml
+from fpdf import FPDF
+
+# Import the template functions that exist in your repo
 from planner.templates import (
     create_daily_page,
     create_daily_reflection_page,
     create_weekly_overview,
     create_monthly_overview,
-    create_weekly_examen_page,
     create_monthly_examen_page,
-    ALL_CATHOLIC_QUOTES 
 )
-from planner.styles import MARGIN_LEFT, MARGIN_TOP, MARGIN_RIGHT
 
-# No apply_calendar_links function needed with direct linking in create_monthly_overview
+def _load_yaml_config(config_path: str) -> dict:
+    if not os.path.exists(config_path):
+        return {}
+    with open(config_path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
 
-def generate_planner_for_format(start_date_obj: date, end_date_obj: date, page_format: str, base_output_directory: str):
-    current_date = start_date_obj
-    active_pdf = None
-    current_pdf_month = -1
-    current_pdf_year = -1
-    
-    daily_page_link_ids_for_current_month = {} 
-    weekly_page_link_ids_for_current_month = {} 
-    calendar_page_internal_link_id = None 
+def _setup_logging(verbosity: int) -> None:
+    level = logging.WARNING
+    if verbosity == 1:
+        level = logging.INFO
+    elif verbosity >= 2:
+        level = logging.DEBUG
+    logging.basicConfig(level=level, format="%(asctime)s [%(levelname)s] %(message)s")
 
-    year_dir = os.path.join(base_output_directory, str(start_date_obj.year))
-    format_specific_dir = os.path.join(year_dir, page_format)
-    if not os.path.exists(format_specific_dir):
-        try:
-            os.makedirs(format_specific_dir)
-        except OSError as e:
-            print(f"Error creating output directory {format_specific_dir}: {e}")
-            return
-    print(f"PDFs for {page_format} will be saved in: {os.path.abspath(format_specific_dir)}")
+def _ensure_outdir(path: str) -> None:
+    if not os.path.exists(path):
+        os.makedirs(path, exist_ok=True)
 
-    while current_date <= end_date_obj:
+def _iter_month_days(y: int, m: int):
+    d = date(y, m, 1)
+    while d.month == m:
+        yield d
+        d += timedelta(days=1)
+
+def _preallocate_links_for_month(pdf: FPDF, y: int, m: int):
+    """Return (daily_links, calendar_link).
+    Monday daily links are aliased to their weekly overview target:
+    we reuse the same link id for Monday's daily and weekly pages.
+    The weekly page is created after the daily page, so the final
+    target becomes the weekly overview as promised in README.
+    """
+    daily: Dict[date, int] = {}
+    for d in _iter_month_days(y, m):
+        daily[d] = pdf.add_link()
+    calendar_link = pdf.add_link()
+    return daily, calendar_link
+
+def generate_planner_for_format(
+    start_date: date,
+    end_date: date,
+    page_format: str,
+    base_output_dir: str,
+    config: dict,
+) -> None:
+    # Margins from config (with sane defaults)
+    margins = (config.get("margins") or {})
+    left = float(margins.get("left", 10))
+    top = float(margins.get("top", 15))
+    right = float(margins.get("right", 10))
+    bottom = float(margins.get("bottom", 15))
+
+    # Output directories: base/year/format
+    year_dir = os.path.join(base_output_dir, str(start_date.year))
+    fmt_dir = os.path.join(year_dir, page_format)
+    _ensure_outdir(fmt_dir)
+    logging.info("Output dir: %s", os.path.abspath(fmt_dir))
+
+    # Create first month's PDF
+    active_pdf: FPDF | None = None
+    current_pdf_year = start_date.year
+    current_pdf_month = start_date.month
+
+    def _new_month_pdf(y: int, m: int) -> FPDF:
+        pdf = FPDF(orientation='P', unit='mm', format=page_format)
+        # Respect config-driven margins including bottom
+        pdf.set_left_margin(left)
+        pdf.set_top_margin(top)
+        pdf.set_right_margin(right)
+        pdf.set_auto_page_break(auto=True, margin=bottom)
+        return pdf
+
+    active_pdf = _new_month_pdf(current_pdf_year, current_pdf_month)
+
+    # Pre-allocate link IDs and render the monthly overview first
+    daily_links, calendar_link = _preallocate_links_for_month(active_pdf, current_pdf_year, current_pdf_month)
+    create_monthly_overview(
+        active_pdf,
+        current_pdf_year,
+        current_pdf_month,
+        daily_links,
+        calendar_link,
+    )
+
+    current_date = start_date
+    while current_date <= end_date:
+        # Month boundary? finalize previous, start new
         if current_date.month != current_pdf_month or current_date.year != current_pdf_year:
-            if active_pdf is not None:
-                completed_month_name = py_calendar.month_name[current_pdf_month]
-                create_monthly_examen_page(active_pdf, completed_month_name, current_pdf_year)
-                output_filename = f"{current_pdf_month:02d} - {completed_month_name}_{current_pdf_year}_{page_format}.pdf"
-                output_filepath = os.path.join(format_specific_dir, output_filename)
-                try:
-                    active_pdf.output(output_filepath)
-                    print(f"PDF for {completed_month_name} {current_pdf_year} ({page_format}) generated as {output_filepath}")
-                except Exception as e:
-                    print(f"Error saving PDF {output_filepath}: {e}")
+            completed_month_name = py_calendar.month_name[current_pdf_month]
+            create_monthly_examen_page(active_pdf, completed_month_name, current_pdf_year)
 
+            out_name = f"{current_pdf_month:02d} - {completed_month_name}_{current_pdf_year}_{page_format}.pdf"
+            out_path = os.path.join(fmt_dir, out_name)
+            try:
+                active_pdf.output(out_path)
+                logging.info("Saved %s", out_path)
+            except Exception as e:
+                logging.error("Failed to save %s: %s", out_path, e)
+                raise
+
+            # Start new month
             current_pdf_month = current_date.month
             current_pdf_year = current_date.year
-            daily_page_link_ids_for_current_month = {} 
-            weekly_page_link_ids_for_current_month = {} 
+            active_pdf = _new_month_pdf(current_pdf_year, current_pdf_month)
 
-            active_pdf = FPDF(orientation='P', unit='mm', format=page_format)
-            active_pdf.set_left_margin(MARGIN_LEFT)
-            active_pdf.set_top_margin(MARGIN_TOP)
-            active_pdf.set_right_margin(MARGIN_RIGHT)
-            active_pdf.set_auto_page_break(auto=True, margin= getattr(active_pdf, 'b_margin', 15) if getattr(active_pdf, 'b_margin', 15) > 0 else 15)
-            
-            calendar_page_internal_link_id = active_pdf.add_link() 
-            
-            create_monthly_overview(active_pdf, current_pdf_year, current_pdf_month,
-                                    daily_page_link_ids_for_current_month, 
-                                    calendar_page_internal_link_id)
+            daily_links, calendar_link = _preallocate_links_for_month(active_pdf, current_pdf_year, current_pdf_month)
+            create_monthly_overview(
+                active_pdf,
+                current_pdf_year,
+                current_pdf_month,
+                daily_links,
+                calendar_link,
+            )
 
-        if active_pdf:
-            if current_date.weekday() == 0: 
-                weekly_link_id = active_pdf.add_link()
-                weekly_page_link_ids_for_current_month[current_date] = weekly_link_id
-                create_weekly_overview(active_pdf, current_date, 
-                                       calendar_page_internal_link_id, 
-                                       weekly_link_id)    
-                create_weekly_examen_page(active_pdf, current_date)
+        # Daily page
+        create_daily_page(
+            active_pdf,
+            current_date,
+            calendar_link,                # back to monthly calendar
+            daily_links[current_date],     # anchor id used by monthly calendar
+        )
 
-            daily_link_target_id = daily_page_link_ids_for_current_month.get(current_date)
-            create_daily_page(active_pdf, current_date,
-                              calendar_page_internal_link_id, 
-                              daily_link_target_id) 
-            create_daily_reflection_page(active_pdf, current_date)
-        else: 
-            print(f"CRITICAL Error: active_pdf is None at date {current_date}. Aborting.")
-            return
+        # Weekly overview on Mondays: reuse the SAME link id as the daily page
+        # so the calendar Monday cell ends up pointing to the weekly overview.
+        if current_date.weekday() == 0:
+            create_weekly_overview(
+                active_pdf,
+                current_date,
+                calendar_link,                 # back to calendar
+                daily_links[current_date],     # alias link id
+            )
+
+        # Daily reflection page (no calendar_link arg in your template signature)
+        create_daily_reflection_page(active_pdf, current_date)
 
         current_date += timedelta(days=1)
 
-    if active_pdf is not None:
-        final_month_name = py_calendar.month_name[current_pdf_month]
-        create_monthly_examen_page(active_pdf, final_month_name, current_pdf_year)
-        output_filename = f"{current_pdf_month:02d} - {final_month_name}_{current_pdf_year}_{page_format}.pdf"
-        output_filepath = os.path.join(format_specific_dir, output_filename)
-        try:
-            active_pdf.output(output_filepath)
-            print(f"PDF for {final_month_name} {current_pdf_year} ({page_format}) generated as {output_filepath}")
-        except Exception as e:
-            print(f"Error saving PDF {output_filepath}: {e}")
+    # Finalize the last month
+    last_month_name = py_calendar.month_name[current_pdf_month]
+    create_monthly_examen_page(active_pdf, last_month_name, current_pdf_year)
+    out_name = f"{current_pdf_month:02d} - {last_month_name}_{current_pdf_year}_{page_format}.pdf"
+    out_path = os.path.join(fmt_dir, out_name)
+    try:
+        active_pdf.output(out_path)
+        logging.info("Saved %s", out_path)
+    except Exception as e:
+        logging.error("Failed to save %s: %s", out_path, e)
+        raise
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="Generate Remarkable Daily Planner PDFs (one per month).")
+    p.add_argument("--years", nargs="+", type=int, default=[date.today().year], help="Years to generate (e.g., --years 2025 2026).")
+    p.add_argument("--formats", nargs="+", default=["A4", "A5"], help="Page formats to generate (e.g., --formats A4 A5).")
+    p.add_argument("--outdir", default="generated_planners", help="Base output directory.")
+    p.add_argument("--config", default="config.yaml", help="Path to YAML configuration.")
+    p.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity (-v, -vv).")
+    return p.parse_args()
+
+def main() -> None:
+    args = parse_args()
+    _setup_logging(args.verbose)
+    cfg = _load_yaml_config(args.config)
+
+    logging.info("Years=%s Formats=%s OutDir=%s", args.years, args.formats, args.outdir)
+
+    for y in args.years:
+        logging.info("--- Generating planner for %d ---", y)
+        for fmt in args.formats:
+            logging.info("-- %s --", fmt)
+            start = date(y, 1, 1)
+            end = date(y, 12, 31)
+            generate_planner_for_format(start, end, fmt, args.outdir, cfg)
+        logging.info("--- Finished %d ---", y)
+
+    print("\nPDF planner generation complete. Crafted by: Christophe Domingos")
 
 if __name__ == "__main__":
-    print("Starting PDF planner generation (v2.5.1 - Extended Year/Format Config)...") # Version updated
-    
-    # Updated years and formats to generate
-    years_to_generate = [2025, 2026] 
-    formats_to_generate = ['A4', 'A5'] 
-    
-    base_output_dir = "generated_planners"
-
-    for year in years_to_generate:
-        print(f"\n--- Generating Planner for {year} ---")
-        for fmt in formats_to_generate:
-            print(f"\n-- Generating {fmt} format --")
-            start_date_val = date(year, 1, 1) 
-            end_date_val = date(year, 12, 31) # Ensure full year generation 
-            generate_planner_for_format(start_date_val, end_date_val, fmt, base_output_dir)
-        print(f"--- Finished generating for {year} ---")
-
-    print("\nPDF planner generation for all requested years and formats finished.")
-    print("\nCrafted by: Christophe Domingos")
+    main()

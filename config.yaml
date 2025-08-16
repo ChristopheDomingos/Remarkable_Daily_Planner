@@ -2,8 +2,6 @@ margins:
   left: 10
   top: 15
   right: 10
+  bottom: 15   # NEW, used by set_auto_page_break
 font_title: "Arial,B,16"
 font_body: "Arial,,12"
-# For Examen page font customization:
-# font_examen_step_title: "Arial,B,12"
-# font_examen_prompt: "Arial,I,10"

@@ -1,33 +1,49 @@
-# -*- coding: utf-8 -*-
-# Remarkable Daily Planner
-# Version 2.3
-#
-# Created by: Christophe Domingos
-# Date: June 3, 2025 # Updated
-#
-# Description: Handles loading of planner configuration from a YAML file.
-
+from __future__ import annotations
+import os
 import yaml
-from pathlib import Path
-from typing import Any, Dict
+from typing import Dict, Any
 
-def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
-    """
-    Loads configuration settings from a YAML file.
+DEFAULTS: Dict[str, Any] = {
+    "margins": {"left": 10, "top": 15, "right": 10, "bottom": 15},
+    "locale": "en_US",
+    "fonts": {
+        # You may switch to a Unicode TTF in templates/styles if desired
+        "title": "Arial,B,16",
+        "body":  "Arial,,12",
+    },
+    "quotes": {
+        "path": "my_quotes.csv",
+        "seed": 0
+    }
+}
 
-    Args:
-        config_path: Path to the configuration file. Defaults to "config.yaml"
-                     expected in the project root.
+MONTHS = {
+    "en_US": ["", "January","February","March","April","May","June","July","August","September","October","November","December"],
+    "pt_PT": ["", "Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"],
+    "pl_PL": ["", "Styczeń","Luty","Marzec","Kwiecień","Maj","Czerwiec","Lipiec","Sierpień","Wrzesień","Październik","Listopad","Grudzień"],
+}
 
-    Returns:
-        A dictionary containing the configuration settings.
+def load_config(path: str | None) -> Dict[str, Any]:
+    data: Dict[str, Any] = {}
+    if path and os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+    # merge shallowly
+    cfg = DEFAULTS.copy()
+    for k, v in data.items():
+        if isinstance(v, dict) and isinstance(cfg.get(k), dict):
+            nv = cfg[k].copy()
+            nv.update(v)
+            cfg[k] = nv
+        else:
+            cfg[k] = v
+    # sanity for margins
+    m = cfg.get("margins", {})
+    for key in ["left","top","right","bottom"]:
+        if float(m.get(key, 0)) < 0:
+            raise ValueError(f"Margin '{key}' must be >= 0")
+    return cfg
 
-    Raises:
-        FileNotFoundError: If the configuration file is not found.
-    """
-    path = Path(config_path)
-    if not path.exists():
-        # This error helps identify if config.yaml is missing from project root
-        raise FileNotFoundError(f"Configuration file not found: {config_path}")
-    with path.open("r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+def month_name(locale_code: str, month: int) -> str:
+    table = MONTHS.get(locale_code, MONTHS["en_US"])
+    return table[month]
