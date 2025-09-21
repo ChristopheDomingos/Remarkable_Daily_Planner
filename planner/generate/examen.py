@@ -6,14 +6,22 @@ from datetime import date, timedelta
 
 from fpdf import FPDF
 
-from remarkable_planner.config import load_config, month_name
-from remarkable_planner.rendering.pdf_factory import make_pdf
+from planner.config import month_name
+from planner.rendering.pdf_factory import make_pdf
 
-from planner.templates import (
-    create_weekly_examen_page,
-    create_daily_examen_page,
-    create_monthly_examen_page,
-)
+# Import the templates module and feature-detect available functions.
+# This lets the generator work even if some examen helpers are not implemented.
+import planner.templates as T  # type: ignore
+
+# Soft capabilities
+HAS_DAILY_EXAMEN = hasattr(T, "create_daily_examen_page")
+HAS_WEEKLY_EXAMEN = hasattr(T, "create_weekly_examen_page")
+HAS_MONTHLY_EXAMEN = hasattr(T, "create_monthly_examen_page")
+
+if not HAS_MONTHLY_EXAMEN:
+    raise ImportError(
+        "planner.templates must define 'create_monthly_examen_page' for the examen generator."
+    )
 
 def _ensure_dir(path: str) -> None:
     if not os.path.exists(path):
@@ -25,6 +33,13 @@ def generate_year_for_format(
     base_output_dir: str,
     cfg: dict,
 ) -> None:
+    """Generate an Examen-only planner for the given year and page format.
+
+    Behavior adapts to available template functions:
+      - If T.create_daily_examen_page exists -> add a daily examen page for each day.
+      - If T.create_weekly_examen_page exists -> add a weekly examen page on Mondays.
+      - Always add a monthly examen page at the start and end of each month.
+    """
     margins = cfg.get("margins", {})
     locale_code = cfg.get("locale", "en_US")
 
@@ -35,18 +50,23 @@ def generate_year_for_format(
         pdf: FPDF = make_pdf(page_format, margins)
         month_label = month_name(locale_code, month)
 
-        # intro/overview
-        create_monthly_examen_page(pdf, month_label, year)
+        # Monthly Examen intro/overview (required)
+        T.create_monthly_examen_page(pdf, month_label, year)
 
         d = date(year, month, 1)
         while d.month == month:
-            create_daily_examen_page(pdf, d)
-            if d.weekday() == 0:
-                create_weekly_examen_page(pdf, d)
+            # Optional daily examen
+            if HAS_DAILY_EXAMEN:
+                T.create_daily_examen_page(pdf, d)
+
+            # Optional weekly examen (Mondays)
+            if HAS_WEEKLY_EXAMEN and d.weekday() == 0:
+                T.create_weekly_examen_page(pdf, d)
+
             d += timedelta(days=1)
 
-        # monthly summary at the end
-        create_monthly_examen_page(pdf, month_label, year)
+        # Monthly Examen summary/end (required)
+        T.create_monthly_examen_page(pdf, month_label, year)
 
         out_name = f"{month:02d} - {month_label}_{year}_{page_format}.pdf"
         out_path = os.path.join(outdir, out_name)

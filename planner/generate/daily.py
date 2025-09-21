@@ -3,14 +3,11 @@ from __future__ import annotations
 import logging
 import os
 from datetime import date
-from typing import Dict
-
 from fpdf import FPDF
 
-from Remarkable_PDF_Planner_Generator_planner.config import load_config, month_name
-from remarkable_planner.rendering.pdf_factory import make_pdf
-from remarkable_planner.rendering.links import preallocate_month_links
-from remarkable_planner.generate.month_loop import iter_date_range
+from planner.config import month_name
+from planner.rendering.pdf_factory import make_pdf
+from planner.generate.month_loop import iter_date_range
 
 # Use your existing templates without touching them
 from planner.templates import (
@@ -45,7 +42,8 @@ def generate_for_format(
     current_month = start_date.month
     pdf: FPDF = make_pdf(page_format, margins)
 
-    daily_links, calendar_link = preallocate_month_links(pdf, current_year, current_month)
+    daily_links: dict = {}           # let monthly_overview populate this
+    calendar_link: int = pdf.add_link()
     create_monthly_overview(pdf, current_year, current_month, daily_links, calendar_link)
 
     for d in iter_date_range(start_date, end_date):
@@ -66,7 +64,9 @@ def generate_for_format(
             current_month = d.month
             current_year = d.year
             pdf = make_pdf(page_format, margins)
-            daily_links, calendar_link = preallocate_month_links(pdf, current_year, current_month)
+
+            daily_links = {}
+            calendar_link = pdf.add_link()
             create_monthly_overview(pdf, current_year, current_month, daily_links, calendar_link)
 
         # daily page

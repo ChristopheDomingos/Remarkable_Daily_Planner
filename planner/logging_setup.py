@@ -1,7 +1,6 @@
 import json
 import logging
 import sys
-from typing import Optional
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:

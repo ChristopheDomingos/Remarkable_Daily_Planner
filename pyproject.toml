@@ -1,0 +1,21 @@
+[project]
+name = "remarkable-planner"
+version = "2.6.1"
+description = "Remarkable PDF Planner generator"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["fpdf2", "PyYAML"]
+
+[project.scripts]
+planner = "planner.cli:main"
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true

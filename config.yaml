@@ -2,6 +2,9 @@ margins:
   left: 10
   top: 15
   right: 10
-  bottom: 15   # NEW, used by set_auto_page_break
+  bottom: 15   # used by set_auto_page_break
 font_title: "Arial,B,16"
 font_body: "Arial,,12"
+
+# locale controls filenames (page titles remain English unless you tweak templates)
+locale: en_US
